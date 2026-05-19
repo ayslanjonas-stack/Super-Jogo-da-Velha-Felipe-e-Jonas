@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Super Jogo da Velha! 🌟</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
+    <style>
+        /* Variáveis de Tema Dinâmicas */
+        :root {
+            --fundo-grad-1: #fffdf6;
+            --fundo-grad-2: #ffeaa7;
+            --cor-primaria: #ff7b90;
+            --cor-secundaria: #ffb84d;
+            --cor-tabuleiro: #ffe082;
+            --cor-borda-tab: #ffb300;
+            --cor-sombra-tab: #f39c12;
+            --cor-celula: #ffffff;
+            --cor-texto: #2c3e50;
+        }
+
+        /* Tema Espaço */
+        [data-theme="espaco"] {
+            --fundo-grad-1: #0f172a;
+            --fundo-grad-2: #1e1b4b;
+            --cor-primaria: #a855f7;
+            --cor-secundaria: #3b82f6;
+            --cor-tabuleiro: #312e81;
+            --cor-borda-tab: #4338ca;
+            --cor-sombra-tab: #1e1b4b;
+            --cor-celula: #1e293b;
+            --cor-texto: #f8fafc;
+        }
+
+        /* Tema Floresta */
+        [data-theme="floresta"] {
+            --fundo-grad-1: #f0fdf4;
+            --fundo-grad-2: #bbf7d0;
+            --cor-primaria: #16a34a;
+            --cor-secundaria: #ca8a04;
+            --cor-tabuleiro: #4ade80;
+            --cor-borda-tab: #22c55e;
+            --cor-sombra-tab: #15803d;
+            --cor-celula: #ffffff;
+            --cor-texto: #14532d;
+        }
+
+        /* Tema Doces */
+        [data-theme="doces"] {
+            --fundo-grad-1: #fff5f5;
+            --fundo-grad-2: #fbcfe8;
+            --cor-primaria: #db2777;
+            --cor-secundaria: #f472b6;
+            --cor-tabuleiro: #f472b6;
+            --cor-borda-tab: #ec4899;
+            --cor-sombra-tab: #be185d;
+            --cor-celula: #ffffff;
+            --cor-texto: #831843;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Fredoka', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            background: radial-gradient(circle, var(--fundo-grad-1) 0%, var(--fundo-grad-2) 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            overflow-x: hidden;
+            position: relative;
+            color: var(--cor-texto);
+            transition: background 0.5s ease;
+        }
+
+        /* Canvas de Confetes */
+        #confetti-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 440px;
+            text-align: center;
+            z-index: 2;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            color: var(--cor-primaria);
+            text-shadow: 3px 3px 0px var(--cor-celula), 5px 5px 0px rgba(0,0,0,0.05);
+            margin-bottom: 5px;
+            animation: bounce 2s infinite ease-in-out;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        /* Seção de Configurações Iniciais */
+        .config-card {
+            background: var(--cor-celula);
+            border-radius: 25px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            border: 3px solid var(--cor-secundaria);
+        }
+
+        .config-row {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            text-align: left;
+        }
+
+        .config-row label {
+            font-weight: bold;
+            font-size: 1rem;
+            color: var(--cor-texto);
+        }
+
+        /* Inputs de Nome */
+        .name-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .input-styled {
+            padding: 10px 15px;
+            border-radius: 15px;
+            border: 3px solid var(--cor-secundaria);
+            background: var(--cor-fundo-grad-1);
+            font-family: 'Fredoka', sans-serif;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #2c3e50;
+            outline: none;
+            text-align: center;
+        }
+
+        /* Selector de Tipo de Jogo (Humano vs Bot) */
+        .toggle-group {
+            display: flex;
+            background: #f1f5f9;
+            padding: 5px;
+            border-radius: 15px;
+            border: 2px solid #cbd5e1;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 12px;
+            border: none;
+            background: transparent;
+            font-weight: bold;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #64748b;
+        }
+
+        .toggle-btn.active {
+            background: var(--cor-primaria);
+            color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Seletores Rápidos de Estilos */
+        .style-options {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .style-btn {
+            padding: 8px 12px;
+            border-radius: 15px;
+            background: #f1f5f9;
+            border: 2px solid #cbd5e1;
+            font-weight: bold;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            cursor: pointer;
+            color: #475569;
+        }
+
+        .style-btn.active {
+            background: var(--cor-secundaria);
+            color: white;
+            border-color: var(--cor-secundaria);
+        }
+
+        /* Placar dos Bichinhos */
+        .scoreboard {
+            display: flex;
+            justify-content: space-around;
+            background: var(--cor-celula);
+            padding: 15px;
+            border-radius: 25px;
+            box-shadow: 0 10px 0px var(--cor-sombra-tab);
+            border: 4px solid var(--cor-borda-tab);
+            margin-bottom: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .score-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 45%;
+        }
+
+        .score-avatar {
+            font-size: 2.5rem;
+            filter: drop-shadow(2px 4px 0px rgba(0,0,0,0.1));
+            margin-bottom: 5px;
+            transition: transform 0.3s;
+        }
+
+        .score-card.active .score-avatar {
+            transform: scale(1.3) rotate(-10deg);
+            animation: pulse-avatar 1s infinite alternate;
+        }
+
+        .score-name {
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: var(--cor-texto);
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .score-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--cor-primaria);
+        }
+
+        /* Painel do Turno Atual */
+        .turn-bubble {
+            background-color: var(--cor-celula);
+            padding: 10px 20px;
+            border-radius: 50px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 6px 0px rgba(0,0,0,0.1);
+            border: 3px solid var(--cor-borda-tab);
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--cor-texto);
+            transition: all 0.3s;
+        }
+
+        /* O Tabuleiro */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            background: var(--cor-tabuleiro);
+            padding: 15px;
+            border-radius: 30px;
+            box-shadow: 0 14px 0px var(--cor-sombra-tab), 0 20px 25px rgba(0,0,0,0.15);
+            border: 5px solid var(--cor-borda-tab);
+            margin-bottom: 25px;
+            transition: all 0.3s ease;
+        }
+
+        /* Célula Bubble Style */
+        .cell {
+            background: var(--cor-celula);
+            aspect-ratio: 1;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 -8px 0px rgba(0,0,0,0.06), 0 6px 0px rgba(0,0,0,0.08);
+            transition: all 0.1s ease;
+            position: relative;
+        }
+
+        .cell:active {
+            transform: translateY(4px);
+            box-shadow: inset 0 -4px 0px rgba(0,0,0,0.06), 0 2px 0px rgba(0,0,0,0.08);
+        }
+
+        .cell.claimed {
+            animation: pop-bubble 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: default;
+        }
+
+        /* Botão de Controle */
+        .btn-action {
+            background: var(--cor-primaria);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border-radius: 50px;
+            box-shadow: 0 8px 0px rgba(0,0,0,0.15), 0 10px 15px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.1s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-action:active {
+            transform: translateY(4px);
+            box-shadow: 0 4px 0px rgba(0,0,0,0.15);
+        }
+
+        /* Modal Amigável */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            padding: 20px;
+        }
+
+        .modal.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 35px;
+            padding: 30px;
+            width: 100%;
+            max-width: 350px;
+            text-align: center;
+            border: 6px solid var(--cor-secundaria);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+            transform: scale(0.7);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .modal.open .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-avatar {
+            font-size: 5rem;
+            margin-bottom: 15px;
+            animation: dance 1s infinite alternate ease-in-out;
+        }
+
+        .modal-title {
+            font-size: 1.8rem;
+            color: #d35400;
+            margin-bottom: 10px;
+        }
+
+        .modal-text {
+            font-size: 1.2rem;
+            color: #7f8c8d;
+            margin-bottom: 25px;
+        }
+
+        /* Animações Divertidas */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(1deg); }
+        }
+
+        @keyframes pulse-avatar {
+            0% { transform: scale(1.1); }
+            100% { transform: scale(1.25) rotate(5deg); }
+        }
+
+        @keyframes pop-bubble {
+            0% { transform: scale(0.6); }
+            80% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes dance {
+            0% { transform: translateY(0) rotate(-10deg); }
+            100% { transform: translateY(-10px) rotate(10deg); }
+        }
+
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(0); }
+            25% { transform: rotate(-5deg); }
+            75% { transform: rotate(5deg); }
+        }
+
+        .wiggle {
+            animation: wiggle 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <div class="container">
+        <h1>Super Jogo da Velha! 🌟</h1>
+        <p class="subtitle">Personaliza e joga com os teus amiguinhos!</p>
+
+        <!-- Painel de Configurações -->
+        <div class="config-card">
+            <!-- Modo de Jogo -->
+            <div class="config-row">
+                <label>Modo de Jogo:</label>
+                <div class="toggle-group">
+                    <button class="toggle-btn active" id="btn-pvp" onclick="setGameMode('pvp')">Amigos (Local)</button>
+                    <button class="toggle-btn" id="btn-bot" onclick="setGameMode('bot')">Contra Robô 🤖</button>
+                </div>
+            </div>
+
+            <!-- Nomes dos Jogadores -->
+            <div class="config-row">
+                <label>Nomes dos Jogadores:</label>
+                <div class="name-inputs">
+                    <input type="text" id="p1-name-input" class="input-styled" value="Jogador 1" maxlength="12" oninput="updateNames()">
+                    <input type="text" id="p2-name-input" class="input-styled" value="Jogador 2" maxlength="12" oninput="updateNames()">
+                </div>
+            </div>
+
+            <!-- Seleção de Emojis (Estilo do X e O) -->
+            <div class="config-row">
+                <label>Estilo das Peças (X vs O):</label>
+                <div class="style-options" id="emoji-options">
+                    <button class="style-btn active" onclick="setEmojis('🐶', '🐱', this)">🐶 VS 🐱</button>
+                    <button class="style-btn" onclick="setEmojis('👨‍🚀', '👽', this)">👨‍🚀 VS 👽</button>
+                    <button class="style-btn" onclick="setEmojis('🦄', '🐉', this)">🦄 VS 🐉</button>
+                    <button class="style-btn" onclick="setEmojis('🤖', '👾', this)">🤖 VS 👾</button>
+                    <button class="style-btn" onclick="setEmojis('🍎', '🍌', this)">🍎 VS 🍌</button>
+                </div>
+            </div>
+
+            <!-- Seleção de Temas -->
+            <div class="config-row">
+                <label>Escolhe o Tema de Cor:</label>
+                <div class="style-options" id="theme-options">
+                    <button class="style-btn active" onclick="setTheme('padrao', this)">☀️ Padrão</button>
+                    <button class="style-btn" onclick="setTheme('espaco', this)">🚀 Espaço</button>
+                    <button class="style-btn" onclick="setTheme('floresta', this)">🌳 Floresta</button>
+                    <button class="style-btn" onclick="setTheme('doces', this)">🍬 Doces</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Placar -->
+        <div class="scoreboard">
+            <div class="score-card active" id="score-p1-card">
+                <span class="score-avatar" id="p1-avatar-display">🐶</span>
+                <span class="score-name" id="p1-name-display">Jogador 1</span>
+                <span class="score-number" id="score-p1">0</span>
+            </div>
+            <div style="font-size: 2rem; align-self: center; opacity: 0.5;">VS</div>
+            <div class="score-card" id="score-p2-card">
+                <span class="score-avatar" id="p2-avatar-display">🐱</span>
+                <span class="score-name" id="p2-name-display">Jogador 2</span>
+                <span class="score-number" id="score-p2">0</span>
+            </div>
+        </div>
+
+        <!-- Indicador de Turno -->
+        <div class="turn-bubble" id="turn-indicator">
+            Vez de: <span id="current-player-avatar" style="font-size: 1.5rem;">🐶</span> <span id="current-player-name">Jogador 1</span>
+        </div>
+
+        <!-- Tabuleiro -->
+        <div class="board" id="board">
+            <button class="cell" data-index="0"></button>
+            <button class="cell" data-index="1"></button>
+            <button class="cell" data-index="2"></button>
+            <button class="cell" data-index="3"></button>
+            <button class="cell" data-index="4"></button>
+            <button class="cell" data-index="5"></button>
+            <button class="cell" data-index="6"></button>
+            <button class="cell" data-index="7"></button>
+            <button class="cell" data-index="8"></button>
+        </div>
+
+        <!-- Botão de Reinício Rápido -->
+        <button class="btn-action" id="btn-restart">
+            🔄 Limpar Tabuleiro
+        </button>
+    </div>
+
+    <!-- Modal de Vitória ou Empate -->
+    <div class="modal" id="result-modal">
+        <div class="modal-content">
+            <div class="modal-avatar" id="modal-avatar">🏆</div>
+            <h2 class="modal-title" id="modal-title">Eba! Parabéns!</h2>
+            <p class="modal-text" id="modal-text">O Cachorrinho ganhou!</p>
+            <button class="btn-action" id="btn-modal-close">Jogar de Novo! 🎈</button>
+        </div>
+    </div>
+
+    <script>
+        // --- SINTETIZADOR DE SOM (Web Audio API) ---
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'pop') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.exponentialRampToValueAtTime(600, now + 0.15);
+                    gainNode.gain.setValueAtTime(0.3, now);
+                    gainNode.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } else if (type === 'win') {
+                    const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
+                    notes.forEach((freq, idx) => {
+                        const o = audioCtx.createOscillator();
+                        const g = audioCtx.createGain();
+                        o.connect(g);
+                        g.connect(audioCtx.destination);
+                        o.type = 'triangle';
+                        o.frequency.setValueAtTime(freq, now + idx * 0.1);
+                        g.gain.setValueAtTime(0.15, now + idx * 0.1);
+                        g.gain.linearRampToValueAtTime(0.01, now + idx * 0.1 + 0.4);
+                        o.start(now + idx * 0.1);
+                        o.stop(now + idx * 0.1 + 0.45);
+                    });
+                } else if (type === 'draw') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.linearRampToValueAtTime(180, now + 0.4);
+                    gainNode.gain.setValueAtTime(0.2, now);
+                    gainNode.gain.linearRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                }
+            } catch (e) {
+                console.log('Audio Context falhou ao inicializar:', e);
+            }
+        }
+
+        // --- SISTEMA DE CONFETES ---
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        let confettiActive = false;
+        let confettiParticles = [];
+        const colors = ['#ff7b90', '#ffb84d', '#4ecdc4', '#ffeaa7', '#3498db', '#9b59b6'];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * -canvas.height - 20;
+                this.size = Math.random() * 8 + 6;
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.speedY = Math.random() * 3 + 4;
+                this.speedX = Math.random() * 2 - 1;
+                this.rotation = Math.random() * 360;
+                this.rotationSpeed = Math.random() * 4 - 2;
+            }
+            update() {
+                this.y += this.speedY;
+                this.x += this.speedX;
+                this.rotation += this.rotationSpeed;
+                if (this.y > canvas.height) {
+                    this.y = -20;
+                    this.x = Math.random() * canvas.width;
+                }
+            }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation * Math.PI / 180);
+                ctx.fillStyle = this.color;
+                ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+                ctx.restore();
+            }
+        }
+
+        function triggerConfetti() {
+            confettiParticles = [];
+            for (let i = 0; i < 80; i++) {
+                confettiParticles.push(new Particle());
+            }
+            confettiActive = true;
+            animateConfetti();
+        }
+
+        function stopConfetti() {
+            confettiActive = false;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function animateConfetti() {
+            if (!confettiActive) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            confettiParticles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateConfetti);
+        }
+
+        // --- LÓGICA DO JOGO ---
+        const boardElement = document.getElementById('board');
+        const cells = document.querySelectorAll('.cell');
+        const turnIndicator = document.getElementById('turn-indicator');
+        const currentPlayerAvatar = document.getElementById('current-player-avatar');
+        const currentPlayerName = document.getElementById('current-player-name');
+        
+        const scoreP1Element = document.getElementById('score-p1');
+        const scoreP2Element = document.getElementById('score-p2');
+        const btnRestart = document.getElementById('btn-restart');
+        
+        const p1NameInput = document.getElementById('p1-name-input');
+        const p2NameInput = document.getElementById('p2-name-input');
+        const p1NameDisplay = document.getElementById('p1-name-display');
+        const p2NameDisplay = document.getElementById('p2-name-display');
+        const p1AvatarDisplay = document.getElementById('p1-avatar-display');
+        const p2AvatarDisplay = document.getElementById('p2-avatar-display');
+
+        // Modal de Resultados
+        const resultModal = document.getElementById('result-modal');
+        const modalAvatar = document.getElementById('modal-avatar');
+        const modalTitle = document.getElementById('modal-title');
+        const modalText = document.getElementById('modal-text');
+        const btnModalClose = document.getElementById('btn-modal-close');
+
+        // Estrutura dos Jogadores
+        let player1 = { name: "Jogador 1", avatar: "🐶", score: 0 };
+        let player2 = { name: "Jogador 2", avatar: "🐱", score: 0 };
+        
+        let currentPlayer = player1;
+        let gameStarter = player1; // Controla quem começa a rodada atual
+        let boardState = Array(9).fill("");
+        let isGameActive = true;
+        let gameMode = "pvp"; // 'pvp' ou 'bot'
+
+        const winPatterns = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        // Mudar o tema visual
+        function setTheme(themeName, btn) {
+            document.body.setAttribute('data-theme', themeName);
+            document.querySelectorAll('#theme-options .style-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            playSound('pop');
+        }
+
+        // Customizar Emojis (X e O)
+        function setEmojis(avatar1, avatar2, btn) {
+            player1.avatar = avatar1;
+            player2.avatar = avatar2;
+            p1AvatarDisplay.innerText = avatar1;
+            p2AvatarDisplay.innerText = avatar2;
+            
+            document.querySelectorAll('#emoji-options .style-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // Atualiza os elementos visuais atuais
+            currentPlayerAvatar.innerText = currentPlayer.avatar;
+            
+            // Remapeia o conteúdo visual das células já preenchidas
+            cells.forEach((cell, idx) => {
+                if (boardState[idx] === player1) {
+                    cell.innerText = player1.avatar;
+                } else if (boardState[idx] === player2) {
+                    cell.innerText = player2.avatar;
+                }
+            });
+            playSound('pop');
+        }
+
+        // Alterar Modo de Jogo
+        function setGameMode(mode) {
+            gameMode = mode;
+            document.getElementById('btn-pvp').classList.toggle('active', mode === 'pvp');
+            document.getElementById('btn-bot').classList.toggle('active', mode === 'bot');
+            
+            if (mode === 'bot') {
+                p2NameInput.value = "Robô Esperto 🤖";
+                p2NameInput.disabled = true;
+            } else {
+                p2NameInput.value = "Jogador 2";
+                p2NameInput.disabled = false;
+            }
+            updateNames();
+            gameStarter = player1; // Reinicia para o jogador 1 começar ao trocar de modo
+            resetBoard();
+            playSound('pop');
+        }
+
+        // Atualizar nomes em tempo real
+        function updateNames() {
+            player1.name = p1NameInput.value.trim() || "Jogador 1";
+            player2.name = p2NameInput.value.trim() || "Jogador 2";
+            
+            p1NameDisplay.innerText = player1.name;
+            p2NameDisplay.innerText = player2.name;
+            currentPlayerName.innerText = currentPlayer.name;
+        }
+
+        // Clicar numa célula
+        function handleCellClick(event) {
+            const cell = event.currentTarget;
+            const index = parseInt(cell.getAttribute('data-index'));
+
+            if (boardState[index] !== "" || !isGameActive) return;
+
+            // Bloquear jogada humana se for o turno do Robô
+            if (gameMode === 'bot' && currentPlayer === player2) return;
+
+            makeMove(index);
+
+            // Se for modo robô e o jogo continua, agenda a jogada do Robô
+            if (gameMode === 'bot' && isGameActive && currentPlayer === player2) {
+                setTimeout(makeBotMove, 600);
+            }
+        }
+
+        // Executar uma jogada
+        function makeMove(index) {
+            boardState[index] = currentPlayer;
+            const cell = document.querySelector(`[data-index="${index}"]`);
+            cell.innerText = currentPlayer.avatar;
+            cell.classList.add('claimed');
+            playSound('pop');
+
+            if (checkWin(boardState, currentPlayer)) {
+                handleWin();
+            } else if (boardState.every(cell => cell !== "")) {
+                handleDraw();
+            } else {
+                togglePlayer();
+            }
+        }
+
+        // Alternar Jogador Atual
+        function togglePlayer() {
+            currentPlayer = currentPlayer === player1 ? player2 : player1;
+            
+            currentPlayerAvatar.innerText = currentPlayer.avatar;
+            currentPlayerName.innerText = currentPlayer.name;
+
+            document.getElementById('score-p1-card').classList.toggle('active', currentPlayer === player1);
+            document.getElementById('score-p2-card').classList.toggle('active', currentPlayer === player2);
+        }
+
+        // Verificar vitória
+        function checkWin(state, player) {
+            return winPatterns.some(pattern => {
+                return pattern.every(index => state[index] === player);
+            });
+        }
+
+        // Algoritmo Inteligente do Robô (Minimax Completo)
+        function makeBotMove() {
+            if (!isGameActive) return;
+
+            // Decidir se joga aleatoriamente ou se joga perfeito
+            const isSmart = Math.random() > 0.35; // 65% de chance de jogar perfeito, 35% de errar
+
+            let targetIndex;
+            if (isSmart) {
+                targetIndex = getBestMove();
+            } else {
+                // Jogada aleatória simples
+                const emptyCells = boardState.map((val, idx) => val === "" ? idx : null).filter(val => val !== null);
+                targetIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            }
+
+            if (targetIndex !== undefined && targetIndex !== null) {
+                makeMove(targetIndex);
+            }
+        }
+
+        function getBestMove() {
+            let bestScore = -Infinity;
+            let move;
+            for (let i = 0; i < 9; i++) {
+                if (boardState[i] === "") {
+                    boardState[i] = player2; // Tenta jogada do robô
+                    let score = minimax(boardState, 0, false);
+                    boardState[i] = ""; // Desfaz
+                    if (score > bestScore) {
+                        bestScore = score;
+                        move = i;
+                    }
+                }
+            }
+            return move;
+        }
+
+        function minimax(state, depth, isMaximizing) {
+            if (checkWin(state, player2)) return 10 - depth;
+            if (checkWin(state, player1)) return depth - 10;
+            if (state.every(cell => cell !== "")) return 0;
+
+            if (isMaximizing) {
+                let bestScore = -Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (state[i] === "") {
+                        state[i] = player2;
+                        let score = minimax(state, depth + 1, false);
+                        state[i] = "";
+                        bestScore = Math.max(score, bestScore);
+                    }
+                }
+                return bestScore;
+            } else {
+                let bestScore = Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (state[i] === "") {
+                        state[i] = player1;
+                        let score = minimax(state, depth + 1, true);
+                        state[i] = "";
+                        bestScore = Math.min(score, bestScore);
+                    }
+                }
+                return bestScore;
+            }
+        }
+
+        // Processar Vitória
+        function handleWin() {
+            isGameActive = false;
+            playSound('win');
+            triggerConfetti();
+
+            if (currentPlayer === player1) {
+                player1.score++;
+                scoreP1Element.innerText = player1.score;
+                document.getElementById('score-p1-card').classList.add('wiggle');
+                setTimeout(() => document.getElementById('score-p1-card').classList.remove('wiggle'), 1000);
+            } else {
+                player2.score++;
+                scoreP2Element.innerText = player2.score;
+                document.getElementById('score-p2-card').classList.add('wiggle');
+                setTimeout(() => document.getElementById('score-p2-card').classList.remove('wiggle'), 1000);
+            }
+
+            modalAvatar.innerText = currentPlayer.avatar;
+            modalTitle.innerText = "Parabéns! 🎉";
+            modalText.innerText = `O amiguinho ${currentPlayer.name} conseguiu vencer!`;
+            resultModal.classList.add('open');
+
+            // Alterna quem começará a próxima partida
+            gameStarter = (gameStarter === player1) ? player2 : player1;
+        }
+
+        // Processar Empate
+        function handleDraw() {
+            isGameActive = false;
+            playSound('draw');
+
+            modalAvatar.innerText = "🤝";
+            modalTitle.innerText = "Empate fofo!";
+            modalText.innerText = "Ninguém perdeu, todos se divertiram muito!";
+            resultModal.classList.add('open');
+
+            // Alterna quem começará a próxima partida
+            gameStarter = (gameStarter === player1) ? player2 : player1;
+        }
+
+        // Limpar Tabuleiro
+        function resetBoard() {
+            boardState = Array(9).fill("");
+            isGameActive = true;
+            stopConfetti();
+
+            cells.forEach(cell => {
+                cell.innerText = "";
+                cell.className = "cell";
+            });
+
+            currentPlayer = gameStarter;
+            currentPlayerAvatar.innerText = gameStarter.avatar;
+            currentPlayerName.innerText = gameStarter.name;
+            document.getElementById('score-p1-card').classList.toggle('active', currentPlayer === player1);
+            document.getElementById('score-p2-card').classList.toggle('active', currentPlayer === player2);
+
+            // Se for o Robô a começar, inicia a inteligência artificial automaticamente
+            if (gameMode === 'bot' && currentPlayer === player2 && isGameActive) {
+                setTimeout(makeBotMove, 600);
+            }
+        }
+
+        function closeModalAndReset() {
+            resultModal.classList.remove('open');
+            resetBoard();
+        }
+
+        // --- ATIVAÇÃO DE COMPONENTES ---
+        cells.forEach(cell => {
+            cell.addEventListener('click', handleCellClick);
+            cell.addEventListener('touchstart', initAudio, { once: true });
+        });
+
+        btnRestart.addEventListener('click', () => {
+            playSound('pop');
+            resetBoard();
+        });
+        btnRestart.addEventListener('touchstart', initAudio, { once: true });
+
+        btnModalClose.addEventListener('click', closeModalAndReset);
+        document.body.addEventListener('click', initAudio, { once: true });
+
+        // Inicializa com nomes iniciais corrigidos
+        updateNames();
+    </script>
+</body>
+</html>
